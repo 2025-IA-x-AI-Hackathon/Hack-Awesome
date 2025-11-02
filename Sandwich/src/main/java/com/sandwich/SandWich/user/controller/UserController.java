@@ -1,0 +1,149 @@
+package com.sandwich.SandWich.user.controller;
+
+import com.sandwich.SandWich.auth.security.UserDetailsImpl;
+import com.sandwich.SandWich.common.exception.exceptiontype.UserNotFoundException;
+import com.sandwich.SandWich.user.domain.User;
+import com.sandwich.SandWich.user.dto.*;
+import com.sandwich.SandWich.user.repository.ProfileRepository;
+import com.sandwich.SandWich.user.repository.UserRepository;
+import com.sandwich.SandWich.user.service.UserService;
+import com.sandwich.SandWich.auth.security.JwtUtil;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/users")
+public class UserController {
+
+    private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
+    private final JwtUtil jwtUtil;
+    private final UserService userService;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    // 마이페이지 조회
+    @GetMapping("/me")
+    @Transactional
+    public ResponseEntity<?> getMyProfile(Authentication authentication) {
+        System.out.println("getName() = " + authentication.getName());
+        String email = authentication.getName();
+        User user = userRepository.findByEmailWithDetails(email)
+                .orElseThrow(UserNotFoundException::new);
+
+        return ResponseEntity.ok(userService.getMe(user));
+    }
+
+    // 회원 탈퇴
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteMyAccount(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        userService.deleteMe(userDetails.getUser());
+        redisTemplate.delete("refresh:userId:" + userDetails.getUser().getId());
+
+        return ResponseEntity.ok("회원 탈퇴 완료");
+    }
+    @PatchMapping("/profile/image")
+    public ResponseEntity<?> updateProfileImage(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                @RequestBody java.util.Map<String, String> body) {
+        userService.updateProfileImage(userDetails.getId(), body.get("url"));
+        return ResponseEntity.ok("프로필 이미지 수정 완료");
+    }
+
+    /** 프로필 배경(커버) 이미지 교체(간편 PATCH) */
+    @PatchMapping("/profile/cover")
+    public ResponseEntity<?> updateProfileCover(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                @RequestBody java.util.Map<String, String> body) {
+        userService.updateProfileCover(userDetails.getId(), body.get("url"));
+        return ResponseEntity.ok("프로필 배경 이미지 수정 완료");
+    }
+
+
+    @PutMapping("/profile")
+    @Transactional
+    public ResponseEntity<?> updateOrCreateProfile(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody @Valid UserProfileRequest req
+    ) {
+        User user = userDetails.getUser();
+
+        userService.upsertUserProfile(user, req);
+        return ResponseEntity.ok("프로필 설정 완료");
+    }
+    @PatchMapping("/nickname")
+    public ResponseEntity<?> updateNickname(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                            @RequestBody @Valid NicknameUpdateRequest request) {
+        userService.updateNickname(userDetails.getId(), request.nickname());
+        return ResponseEntity.ok("닉네임 수정 완료");
+    }
+
+    @PatchMapping("/profile/bio")
+    public ResponseEntity<?> updateBio(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody @Valid ProfileBioUpdateRequest req
+    ) {
+        userService.updateBio(userDetails.getId(), req.getBio());
+        return ResponseEntity.ok("소개 수정 완료");
+    }
+    // 이미 사용 중 : true
+    // 사용 가능 : false
+    @GetMapping("/check-nickname")
+    public ResponseEntity<?> checkNicknameDuplicate(@RequestParam("value") String nickname) {
+        boolean isDuplicate = profileRepository.existsByNickname(nickname);
+        return ResponseEntity.ok(isDuplicate);
+    }
+
+    @GetMapping("/position")
+    public ResponseEntity<PositionResponse> getUserPosition(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User user = userDetails.getUser();
+        return ResponseEntity.ok(userService.getUserPosition(user));
+    }
+
+    @PutMapping("/position")
+    public ResponseEntity<?> updateUserPosition(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody @Valid PositionUpdateRequest request) {
+        userService.updateUserPosition(userDetails.getUser(), request.positionId());
+        return ResponseEntity.ok("작업 분야 설정 완료");
+    }
+
+    @GetMapping("/interests/general")
+    public ResponseEntity<java.util.List<InterestResponse>> getGeneralInterests(
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return ResponseEntity.ok(userService.getGeneralInterests(userDetails.getUser()));
+    }
+
+    @PutMapping("/interests/general")
+    public ResponseEntity<?> updateGeneralInterests(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody @Valid InterestUpdateRequest request) {
+        userService.updateGeneralInterests(userDetails.getUser(), request.interestIds());
+        return ResponseEntity.ok("관심 분야(GENERAL) 설정 완료");
+    }
+
+    @GetMapping("/interests/tech")
+    public ResponseEntity<java.util.List<InterestResponse>> getTechInterests(
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        return ResponseEntity.ok(userService.getTechInterests(userDetails.getUser()));
+    }
+
+    @PutMapping("/interests/tech")
+    public ResponseEntity<?> updateTechInterests(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody @Valid InterestUpdateRequest request) {
+        userService.updateTechInterests(userDetails.getUser(), request.interestIds());
+        return ResponseEntity.ok("기술 스택 설정 완료");
+    }
+
+    @GetMapping("/{id:\\d+}")
+    @jakarta.transaction.Transactional
+    public ResponseEntity<PublicProfileResponse> getPublicProfile(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getPublicProfile(id));
+    }
+
+}
