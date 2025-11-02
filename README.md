@@ -12,18 +12,12 @@
     
 <td align="center"><a href="https://github.com/monya-9"><img src="https://avatars.githubusercontent.com/u/64175828?v=4"
  width="100px;" alt=""/><br /><sub><b>조현주</b></sub></a><br /><a href="https://github.com/monya-9" title="Code">🏠</a></td>
-    
- <td align="center"><a href="https://github.com/ghdtldus"><img src="https://avatars.githubusercontent.com/u/122412999?v=4"
- width="100px;" alt=""/><br /><sub><b>홍시연</b></sub></a><br /><a href="https://github.com/ghdtldus" title="Code">🏠</a></td>
 
  <td align="center"><a href="https://github.com/Dnut0121"><img src="https://avatars.githubusercontent.com/u/127921103?v=4"
  width="100px;" alt=""/><br /><sub><b>송원석</b></sub></a><br /><a href="https://github.com/Dnut0121" title="Code">🏠</a></td>
 
  <td align="center"><a href="https://github.com/Heoeunjin"><img src="https://avatars.githubusercontent.com/u/127829501?v=4"
  width="100px;" alt="https://github.com/nettiger0"/><br /><sub><b>허은진</b></sub></a><br /><a href="https://github.com/Heoeunjin" title="Code">🏠</a></td>
-
- <td align="center"><a href="https://github.com/ljjljj11"><img src="https://avatars.githubusercontent.com/u/202410083?v=4"
- width="100px;" alt=""/><br /><sub><b>이정주</b></sub></a><br /><a href="https://github.com/ljjljj11" title="Code">🏠</a></td>
 
 </tr>
     
